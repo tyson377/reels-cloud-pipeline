@@ -1,0 +1,49 @@
+name: Scheduled Reels Publisher
+
+on:
+  schedule:
+    # 08:30 AM IST (03:00 UTC) - Inside Out (Slot 1)
+    - cron: '0 3 * * *'
+    # 04:30 PM IST (11:00 UTC) - Stick Story (Slot 2)
+    - cron: '0 11 * * *'
+    # 08:00 PM IST (14:30 UTC) - Tall Tale 3D (Slot 3)
+    - cron: '30 14 * * *'
+  workflow_dispatch:
+    inputs:
+      slot:
+        description: 'Slot to publish (morning / afternoon / evening / auto)'
+        required: false
+        default: 'auto'
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Publish Next Reel to Instagram
+        env:
+          BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
+        run: python publisher.py --slot "${{ github.event.inputs.slot || 'auto' }}"
+
+      - name: Commit updated schedule manifest
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add schedule_manifest.json
+          git commit -m "Auto-published Reel to Instagram [skip ci]" || echo "No changes to commit"
+          git push
