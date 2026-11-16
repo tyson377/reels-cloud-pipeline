@@ -75,13 +75,6 @@ def main():
     print(f"[+] Publishing: '{target_item['title']}' ({target_item.get('style')})")
     video_url = target_item["video_url"]
     caption = target_item["caption"]
-    cover_url = target_item.get("cover_url")
-
-    video_asset = {"url": video_url}
-    if cover_url:
-        video_asset["thumbnailUrl"] = cover_url
-        print(f"[+] Attaching Custom Cover Image: {cover_url}")
-
 
     mutation = """
     mutation CreatePost($input: CreatePostInput!) {
@@ -114,7 +107,12 @@ def main():
             "text": caption,
             "assets": [
                 {
-                    "video": video_asset
+                    "video": {
+                        "url": video_url,
+                        "metadata": {
+                            "thumbnailOffset": 1500
+                        }
+                    }
                 }
             ],
             "metadata": {
